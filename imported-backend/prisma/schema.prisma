@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  displayName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profiles    PlayerProfile[]
+  hostedRooms GameRoom[]
+  gameAnswers GameAnswer[]
+  roomAnswers RoomAnswer[]
+  roomPlayers RoomPlayer[]
+
+  @@map("users")
+}
+
+model ChatSession {
+  id               String   @id @default(cuid())
+  name             String
+  messageCount     Int      @default(0)
+  participantCount Int      @default(0)
+  analysisJson     Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participants     ChatParticipant[]
+  messages         ChatMessage[]
+  games            Game[]
+
+  @@map("chat_sessions")
+}
+
+model ChatParticipant {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, name])
+  @@index([sessionId])
+  @@map("chat_participants")
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  sessionId  String
+  externalId String?
+  author     String
+  text       String
+  timestamp  String
+  createdAt  DateTime @default(now())
+
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([author])
+  @@map("chat_messages")
+}
+
+model PlayerProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  gamesPlayed         Int      @default(0)
+  totalScore          Int      @default(0)
+  averageScore        Float    @default(0)
+  accuracy            Float    @default(0)
+  preferredModes      Json?
+  preferredDifficulty String?
+  strongAreas         Json?
+  weakAreas           Json?
+  participantAffinity Json?
+  answerHistory       Json?
+  recentGames         Json?
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("player_profiles")
+}
+
+model Game {
+  id              String         @id @default(cuid())
+  sessionId       String
+  rom             String
+  status          String         @default("READY") // READY, PLAYING, COMPLETED
+  questionCount   Int            @default(5)
+  currentQuestion Int            @default(0)
+  createdAt       DateTime       @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  session         ChatSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questions       GameQuestion[]
+  answers         GameAnswer[]
+  rooms           GameRoom[]
+
+  @@index([sessionId])
+  @@map("games")
+}
+
+model GameQuestion {
+  id               String       @id @default(cuid())
+  gameId           String
+  questionIndex    Int
+  category         String
+  prompt           String
+  quote            String
+  optionsJson      Json
+  correctAnswer    String
+  explanation      String
+  difficulty       String       @default("medium")
+  sourceType       String       // WHO_SAID_IT, MEMORY, OPINION, RELATIONSHIP, CHAOS
+  sourceMessageIds Json         // string[]
+  createdAt        DateTime     @default(now())
+
+  game             Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  answers          GameAnswer[]
+
+  @@index([gameId])
+  @@map("game_questions")
+}
+
+model GameAnswer {
+  id             String       @id @default(cuid())
+  gameId         String
+  questionId     String
+  userId         String
+  selectedAnswer String
+  isCorrect      Boolean
+  responseTimeMs Int
+  points         Int
+  createdAt      DateTime     @default(now())
+
+  game           Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  question       GameQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, questionId, userId])
+  @@index([gameId])
+  @@index([questionId])
+  @@index([userId])
+  @@map("game_answers")
+}
+
+model GameRoom {
+  id                String       @id @default(cuid())
+  roomCode          String       @unique
+  gameId            String
+  hostUserId        String
+  status            String       @default("LOBBY") // LOBBY, COUNTDOWN, QUESTION, RESULTS, FINISHED
+  currentQuestion   Int          @default(0)
+  questionStartedAt DateTime?
+  questionDeadline  DateTime?
+  createdAt         DateTime     @default(now())
+  startedAt         DateTime?
+  endedAt           DateTime?
+
+  game              Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  host              User         @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  players           RoomPlayer[]
+  answers           RoomAnswer[]
+  events            GameEvent[]
+
+  @@index([roomCode])
+  @@index([gameId])
+  @@map("game_rooms")
+}
+
+model RoomPlayer {
+  id          String    @id @default(cuid())
+  roomId      String
+  userId      String
+  displayName String
+  score       Int       @default(0)
+  joinedAt    DateTime  @default(now())
+  isReady     Boolean   @default(false)
+  isConnected Boolean   @default(true)
+  lastSeenAt  DateTime  @default(now())
+
+  room        GameRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@map("room_players")
+}
+
+model RoomAnswer {
+  id             String   @id @default(cuid())
+  roomId         String
+  questionId     String
+  userId         String
+  selectedAnswer String
+  isCorrect      Boolean
+  responseTimeMs Int
+  points         Int
+  createdAt      DateTime @default(now())
+
+  room           GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, questionId, userId])
+  @@index([roomId])
+  @@index([questionId])
+  @@map("room_answers")
+}
+
+model GameEvent {
+  id          String   @id @default(cuid())
+  roomId      String
+  type        String
+  payloadJson Json?
+  createdAt   DateTime @default(now())
+
+  room        GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("game_events")
+}

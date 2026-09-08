@@ -20,10 +20,7 @@ export type QuestionSourceType =
   | "MEMORY"
   | "OPINION"
   | "RELATIONSHIP"
-  | "CHAOS"
-  | "PERSONALITY"
-  | "ROAST"
-  | "HABIT";
+  | "CHAOS";
 
 export type QuestionDifficulty = "easy" | "medium" | "hard" | "extreme";
 

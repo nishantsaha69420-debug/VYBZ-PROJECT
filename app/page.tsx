@@ -116,17 +116,20 @@ export default function VybzMainPage() {
   const [telemetryStatus, setTelemetryStatus] = useState<string>("● ONLINE");
 
   // ── GAME STATE ───────────────────────────────────────────────────────────
+  const [hasUploadedCustomChat, setHasUploadedCustomChat] = useState<boolean>(false);
   const [selectedChat, setSelectedChat] = useState<{
     sessionId?: string;
     title: string;
     participants: string[];
     topQuotes: any[];
     rawText: string;
+    isCustomUpload?: boolean;
   }>({
     title: CHAT_PRESETS[0].title,
     participants: CHAT_PRESETS[0].participants,
     topQuotes: CHAT_PRESETS[0].topQuotes,
     rawText: CHAT_PRESETS[0].rawChatText,
+    isCustomUpload: false,
   });
 
   const [activeRoom, setActiveRoom] = useState<any | null>(null);
@@ -419,6 +422,11 @@ export default function VybzMainPage() {
 
   const handleStartMatch = async () => {
     if (!activeRoom) return;
+    if (!hasUploadedCustomChat) {
+      alert("⚠️ UPLOAD REQUIRED: Please upload your group chat .txt or .json file in Step 01 before starting the match.");
+      scrollTo("section-document");
+      return;
+    }
     const rId = activeRoom.roomId || activeRoom.id || activeRoom.roomCode || activeRoom.code;
     try {
       const room = await apiClient.startMatch(rId, playerId);
@@ -866,8 +874,12 @@ export default function VybzMainPage() {
           01 // PRIMARY HIGHLIGHT: DOCUMENT SELECTION
       ═══════════════════════════════════════════════════════════════════ */}
       <DocumentSelector
+        hasUploadedChat={hasUploadedCustomChat}
         onSelectChat={(chat) => {
           setSelectedChat(chat);
+          if (chat.isCustomUpload) {
+            setHasUploadedCustomChat(true);
+          }
         }}
         onScrollToSetup={() => scrollTo("section-lobby")}
         playClickSound={() => snd.click()}
@@ -882,6 +894,8 @@ export default function VybzMainPage() {
           activeRoom={activeRoom}
           playerId={playerId}
           playerName={playerName}
+          hasUploadedChat={hasUploadedCustomChat}
+          onGoToUpload={() => scrollTo("section-document")}
           onPlayerNameChange={handlePlayerNameChange}
           onRoomCreatedOrJoined={handleRoomCreatedOrJoined}
           onStartMatch={handleStartMatch}

@@ -47,7 +47,7 @@ export function validateQuestion(
     errors.push(`INVALID_CORRECT_ANSWER // Key '${question.correctAnswer}' does not match any option.`);
   }
 
-  // 4. Source Grounding Invariant (only for strict WHO_SAID_IT quote questions)
+  // 4. Source Grounding Invariant for WHO_SAID_IT
   if (question.sourceType === "WHO_SAID_IT" && question.sourceMessageIds.length > 0) {
     const primaryMsg = sourceMessagesMap.get(question.sourceMessageIds[0]);
     if (primaryMsg) {
@@ -67,14 +67,6 @@ export function validateQuestion(
         );
       }
     }
-  }
-
-  // 5. General check: ensure prompt and explanation exist and are meaningful
-  if (!question.prompt || question.prompt.trim().length < 5) {
-    errors.push(`INVALID_PROMPT // Question prompt is missing or too short`);
-  }
-  if (!question.explanation || question.explanation.trim().length < 5) {
-    errors.push(`INVALID_EXPLANATION // Question explanation is missing or too short`);
   }
 
   return {

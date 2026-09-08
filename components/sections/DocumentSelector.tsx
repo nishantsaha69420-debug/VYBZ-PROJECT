@@ -8,18 +8,21 @@ import { ArcadeChatUploader } from "@/components/ui/ArcadeChatUploader";
 import { TopQuote } from "@/types/api";
 
 interface DocumentSelectorProps {
+  hasUploadedChat: boolean;
   onSelectChat: (chat: {
     sessionId?: string;
     title: string;
     participants: string[];
     topQuotes: TopQuote[];
     rawText: string;
+    isCustomUpload?: boolean;
   }) => void;
   onScrollToSetup: () => void;
   playClickSound: () => void;
 }
 
 export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
+  hasUploadedChat,
   onSelectChat,
   onScrollToSetup,
   playClickSound,
@@ -173,132 +176,43 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             alignItems: "stretch",
           }}
         >
-          {/* Left Column: Preset Lore Cartridges & Upload Button */}
-          <div className="reveal-stagger-group" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div
-              className="jb"
-              style={{
-                fontSize: 10,
-                color: "var(--muted)",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              AVAILABLE LORE CARTRIDGES (INSTANT PLAY)
-            </div>
-
-            {CHAT_PRESETS.map((preset) => {
-              const isSelected = !isCustomMode && selectedPresetId === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  onClick={() => handleSelectPreset(preset)}
-                  className="reveal-stagger-item"
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    background: isSelected ? "rgba(57,255,20,0.06)" : "var(--void)",
-                    border: `1px solid ${isSelected ? "var(--green)" : "var(--border)"}`,
-                    padding: "16px 20px",
-                    cursor: "pointer",
-                    transition: "border-color 0.2s, background 0.2s",
-                    position: "relative",
-                  }}
-                >
-                  {isSelected && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        right: 0,
-                        background: "var(--green)",
-                        color: "#000",
-                        fontFamily: "var(--jb)",
-                        fontSize: 9,
-                        fontWeight: 700,
-                        padding: "2px 8px",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      LOADED
-                    </div>
-                  )}
-                  <div
-                    className="jb"
-                    style={{
-                      fontSize: 9,
-                      color: isSelected ? "var(--green)" : "var(--muted)",
-                      letterSpacing: "0.1em",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {preset.badge} • {preset.subtitle}
-                  </div>
-                  <div
-                    className="sg"
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 700,
-                      letterSpacing: "-0.02em",
-                      color: isSelected ? "var(--txt)" : "#C0C4CC",
-                      marginBottom: 6,
-                    }}
-                  >
-                    {preset.title}
-                  </div>
-                  <div
-                    className="jb"
-                    style={{
-                      fontSize: 11,
-                      color: "var(--muted)",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {preset.description}
-                  </div>
-                </button>
-              );
-            })}
-
-            {/* Visual Prominent Divider */}
+          {/* Left Column: Primary File Upload (MANDATORY) & Sample Previews */}
+          <div className="reveal-stagger-group" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* MANDATORY NOTICE HEADER */}
             <div
               style={{
+                background: hasUploadedChat ? "rgba(57,255,20,0.08)" : "rgba(255,208,0,0.1)",
+                border: `1px solid ${hasUploadedChat ? "var(--green)" : "var(--yellow)"}`,
+                padding: "12px 16px",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                margin: "18px 0 6px",
+                justifyContent: "space-between",
+                gap: 10,
               }}
             >
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.45), transparent)" }} />
-              <div
-                className="jb"
-                style={{
-                  fontSize: 10,
-                  color: "var(--cyan)",
-                  letterSpacing: "0.15em",
-                  fontWeight: 800,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <span className="led led-c pulse-c" />
-                OR IMPORT YOUR OWN GROUP CHAT LOG
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className={`led ${hasUploadedChat ? "led-g pulse-g" : "led-y pulse-y"}`} />
+                <span className="jb" style={{ fontSize: 10, fontWeight: 800, color: hasUploadedChat ? "var(--green)" : "var(--yellow)", letterSpacing: "0.08em" }}>
+                  {hasUploadedChat
+                    ? "✓ CHAT ARCHIVE VERIFIED // PERSONALITIES ANALYZED"
+                    : "MANDATORY STEP: UPLOAD YOUR GROUP CHAT (.TXT / .JSON)"}
+                </span>
               </div>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.45), transparent)" }} />
+              <span className="jb" style={{ fontSize: 9, color: "var(--muted)" }}>
+                {hasUploadedChat ? "READY TO PLAY" : "REQUIRED FOR GAMEPLAY"}
+              </span>
             </div>
 
-            {/* Custom Chat File Drop / Upload Standout Box */}
+            {/* Custom Chat File Drop / Upload Standout Box (PRIMARY) */}
             <div
-              className={`reveal-fade-up ${!isCustomMode ? "uploader-glow" : ""}`}
+              className={`reveal-fade-up ${!hasUploadedChat ? "uploader-glow" : ""}`}
               style={{
-                border: isCustomMode
+                border: hasUploadedChat
                   ? "2px solid var(--green)"
                   : "2px dashed rgba(0, 229, 255, 0.8)",
-                background: isCustomMode
+                background: hasUploadedChat
                   ? "rgba(57,255,20,0.05)"
-                  : "radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.12) 0%, #07090D 80%)",
+                  : "radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.14) 0%, #07090D 80%)",
                 padding: "22px 24px",
                 display: "flex",
                 flexDirection: "column",
@@ -328,16 +242,16 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                     style={{
                       fontSize: 9,
                       fontWeight: 800,
-                      background: isCustomMode ? "var(--green)" : "var(--cyan)",
+                      background: hasUploadedChat ? "var(--green)" : "var(--cyan)",
                       color: "#000",
                       padding: "3px 8px",
                       letterSpacing: "0.1em",
                     }}
                   >
-                    {isCustomMode ? "CUSTOM CHAT LOADED" : "FEATURED INGESTION PORT"}
+                    {hasUploadedChat ? "CUSTOM CHAT LOADED" : "PRIMARY INGESTION PORT"}
                   </span>
                   <span className="jb" style={{ fontSize: 10, color: "var(--txt)", fontWeight: 700 }}>
-                    DROP EXPORT OR BROWSE
+                    DROP CHAT FILE (.TXT / .JSON)
                   </span>
                 </div>
                 {uploadStatus && (
@@ -356,7 +270,7 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   lineHeight: 1.45,
                 }}
               >
-                Upload any WhatsApp, Discord, or Telegram chat export (.txt or .json). All names and quotes are extracted automatically with zero manual editing.
+                Upload your group chat export from WhatsApp, Discord, Telegram, or any text file. The system scans the entire file to analyze each member&apos;s personality, habits, and hilarious dynamics!
               </p>
 
               {/* Supported Chat Format Badges */}
@@ -368,7 +282,7 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   ["💬 WhatsApp .txt", "rgba(57,255,20,0.12)", "var(--green)"],
                   ["🎮 Discord .json", "rgba(88,101,242,0.18)", "#7289da"],
                   ["✈️ Telegram .json", "rgba(0,136,204,0.18)", "#00aaff"],
-                  ["📱 iMessage / CSV", "rgba(255,208,0,0.12)", "var(--yellow)"],
+                  ["📱 Simple transcript (Name: Msg)", "rgba(255,208,0,0.12)", "var(--yellow)"],
                 ].map(([label, bg, col]) => (
                   <span
                     key={label}
@@ -393,11 +307,110 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   setCustomChatData(chat);
                   setIsCustomMode(true);
                   setCustomFileName(chat.title);
-                  onSelectChat(chat);
+                  onSelectChat({ ...chat, isCustomUpload: true });
                 }}
                 playClickSound={playClickSound}
               />
             </div>
+
+            {/* Visual Divider */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                margin: "12px 0 4px",
+              }}
+            >
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)" }} />
+              <div
+                className="jb"
+                style={{
+                  fontSize: 9,
+                  color: "var(--muted)",
+                  letterSpacing: "0.12em",
+                  fontWeight: 700,
+                }}
+              >
+                SAMPLE PREVIEW TEMPLATES (UPLOAD REQUIRED TO PLAY)
+              </div>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)" }} />
+            </div>
+
+            {CHAT_PRESETS.map((preset) => {
+              const isSelected = !isCustomMode && selectedPresetId === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => handleSelectPreset(preset)}
+                  className="reveal-stagger-item"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    background: isSelected ? "rgba(255,208,0,0.06)" : "var(--void)",
+                    border: `1px solid ${isSelected ? "var(--yellow)" : "var(--border)"}`,
+                    padding: "14px 18px",
+                    cursor: "pointer",
+                    transition: "border-color 0.2s, background 0.2s",
+                    position: "relative",
+                    opacity: hasUploadedChat ? 0.6 : 0.85,
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      background: "rgba(255,208,0,0.2)",
+                      color: "var(--yellow)",
+                      borderLeft: "1px solid var(--yellow)",
+                      borderBottom: "1px solid var(--yellow)",
+                      fontFamily: "var(--jb)",
+                      fontSize: 8,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    PREVIEW ONLY
+                  </div>
+                  <div
+                    className="jb"
+                    style={{
+                      fontSize: 9,
+                      color: "var(--muted)",
+                      letterSpacing: "0.1em",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {preset.badge} • {preset.subtitle}
+                  </div>
+                  <div
+                    className="sg"
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      letterSpacing: "-0.02em",
+                      color: isSelected ? "var(--yellow)" : "#C0C4CC",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {preset.title}
+                  </div>
+                  <div
+                    className="jb"
+                    style={{
+                      fontSize: 10,
+                      color: "var(--muted)",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {preset.description}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Right Column: Lore Inspector & Verification Card */}
@@ -593,26 +606,40 @@ export const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             {/* Direct Jump to Match Setup */}
             <div style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 16 }}>
               <button
+                disabled={!hasUploadedChat}
                 onClick={() => {
+                  if (!hasUploadedChat) return;
                   playClickSound();
                   onScrollToSetup();
                 }}
-                className="btn-green"
+                className={hasUploadedChat ? "btn-green" : ""}
                 style={{
                   width: "100%",
-                  padding: "14px 20px",
+                  padding: "16px 20px",
                   fontSize: 12,
-                  fontWeight: 700,
+                  fontWeight: 800,
                   letterSpacing: "0.1em",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 10,
-                  cursor: "pointer",
+                  cursor: hasUploadedChat ? "pointer" : "not-allowed",
+                  background: hasUploadedChat ? "var(--green)" : "rgba(255,208,0,0.06)",
+                  color: hasUploadedChat ? "#000" : "var(--yellow)",
+                  border: hasUploadedChat ? "none" : "1px solid var(--yellow)",
+                  transition: "all 0.2s ease",
+                  boxShadow: hasUploadedChat ? "0 0 20px rgba(57,255,20,0.3)" : "none",
                 }}
               >
-                PROCEED TO MATCH CONFIGURATION & LOBBY →
+                {hasUploadedChat
+                  ? "PROCEED TO MATCH CONFIGURATION & LOBBY →"
+                  : "🔒 UPLOAD CHAT ARCHIVE FIRST (STEP 01 REQUIRED)"}
               </button>
+              {!hasUploadedChat && (
+                <div className="jb" style={{ fontSize: 9, color: "var(--muted)", textAlign: "center", marginTop: 8 }}>
+                  Drop or browse your WhatsApp, Discord, or .txt export above to unlock matchmaking.
+                </div>
+              )}
             </div>
           </div>
         </div>

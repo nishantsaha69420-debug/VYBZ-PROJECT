@@ -16,6 +16,8 @@ interface MatchConfigLobbyProps {
   activeRoom: any | null;
   playerId: string;
   playerName: string;
+  hasUploadedChat: boolean;
+  onGoToUpload?: () => void;
   onPlayerNameChange: (name: string) => void;
   onRoomCreatedOrJoined: (room: any) => void;
   onStartMatch: () => void;
@@ -61,6 +63,8 @@ export const MatchConfigLobby: React.FC<MatchConfigLobbyProps> = ({
   activeRoom,
   playerId,
   playerName,
+  hasUploadedChat,
+  onGoToUpload,
   onPlayerNameChange,
   onRoomCreatedOrJoined,
   onStartMatch,
@@ -83,6 +87,10 @@ export const MatchConfigLobby: React.FC<MatchConfigLobbyProps> = ({
 
   // Host creates a room
   const handleCreateRoom = async () => {
+    if (!hasUploadedChat) {
+      setErrorMessage("CHAT ARCHIVE REQUIRED // You must upload your group chat text file (.txt or .json) in Step 01 before hosting a game.");
+      return;
+    }
     if (!playerName.trim()) {
       setErrorMessage("Please enter your player nickname first.");
       return;
@@ -880,22 +888,74 @@ export const MatchConfigLobby: React.FC<MatchConfigLobbyProps> = ({
                   </div>
                 </div>
 
+                {/* Chat Upload Required Notice for Host */}
+                {!hasUploadedChat && (
+                  <div
+                    style={{
+                      gridColumn: "1 / -1",
+                      background: "rgba(255,208,0,0.08)",
+                      border: "1px solid var(--yellow)",
+                      padding: "16px 20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div className="jb" style={{ color: "var(--yellow)", fontWeight: 800, fontSize: 11, display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span className="led led-y pulse-y" />
+                        GROUP CHAT ARCHIVE REQUIRED (STEP 01)
+                      </div>
+                      <div className="jb" style={{ fontSize: 10, color: "var(--txt2)" }}>
+                        You cannot host or compile a tournament without uploading your friend group chat log (.txt or .json).
+                      </div>
+                    </div>
+                    {onGoToUpload && (
+                      <button
+                        type="button"
+                        onClick={onGoToUpload}
+                        className="btn-ghost"
+                        style={{
+                          fontSize: 10,
+                          padding: "8px 16px",
+                          borderColor: "var(--yellow)",
+                          color: "var(--yellow)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ↑ GO TO STEP 01: UPLOAD CHAT
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Create Room Button */}
                 <div style={{ gridColumn: "1 / -1", marginTop: 8 }}>
                   <button
                     onClick={handleCreateRoom}
-                    disabled={isProcessing}
-                    className="btn-green"
+                    disabled={isProcessing || !hasUploadedChat}
+                    className={hasUploadedChat ? "btn-green" : ""}
                     style={{
                       width: "100%",
                       padding: "16px",
                       fontSize: 13,
-                      fontWeight: 700,
+                      fontWeight: 800,
                       letterSpacing: "0.1em",
-                      cursor: isProcessing ? "wait" : "pointer",
+                      cursor: !hasUploadedChat ? "not-allowed" : isProcessing ? "wait" : "pointer",
+                      background: hasUploadedChat ? "var(--green)" : "rgba(255,208,0,0.06)",
+                      color: hasUploadedChat ? "#000" : "var(--yellow)",
+                      border: hasUploadedChat ? "none" : "1px solid var(--yellow)",
+                      boxShadow: hasUploadedChat ? "0 0 24px rgba(57,255,20,0.3)" : "none",
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    {isProcessing ? "INITIALIZING MULTIPLAYER ROOM..." : "GENERATE MULTIPLAYER ROOM CODE →"}
+                    {isProcessing
+                      ? "INITIALIZING MULTIPLAYER ROOM..."
+                      : !hasUploadedChat
+                      ? "🔒 UPLOAD CHAT ARCHIVE IN STEP 01 TO HOST A ROOM"
+                      : "GENERATE MULTIPLAYER ROOM CODE →"}
                   </button>
                 </div>
               </div>

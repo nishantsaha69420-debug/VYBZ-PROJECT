@@ -67,18 +67,10 @@ export function parseChatLog(rawText: string): ParseResult {
     }
   }
 
-// 2. WhatsApp TXT Line-by-Line Parsing
+  // 2. WhatsApp TXT Line-by-Line Parsing
   const lines = rawText.split(/\r?\n/);
   const messages: ParsedChatMessage[] = [];
   const participantsSet = new Set<string>();
-
-  // Additional formats:
-  // e.g. "12/05/23 18:05 - Author: Message" (no comma)
-  const NO_COMMA_DASH_REGEX = /^(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?)\s+-\s+([^:]+?):\s+(.*)$/;
-  // e.g. "Author: Message" or "[Author]: Message" (simple script transcript)
-  const SIMPLE_COLON_REGEX = /^(?:\[([a-zA-Z0-9_\s]{2,25})\]|([a-zA-Z0-9_\s]{2,25})):\s+(.*)$/;
-  // e.g. "[18:05] Author: Message" or "18:05 - Author: Message"
-  const TIME_ONLY_REGEX = /^(?:\[(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?)\]|(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?)\s+-)\s+([^:]+?):\s+(.*)$/;
 
   let currentMessage: ParsedChatMessage | null = null;
   let counter = 1;
@@ -88,15 +80,14 @@ export function parseChatLog(rawText: string): ParseResult {
 
     const bracketMatch = line.match(BRACKET_REGEX);
     const dashMatch = line.match(DASH_REGEX);
-    const noCommaMatch = line.match(NO_COMMA_DASH_REGEX);
-    const timeOnlyMatch = line.match(TIME_ONLY_REGEX);
+    const match = bracketMatch || dashMatch;
 
-    if (bracketMatch || dashMatch || noCommaMatch) {
-      const match = (bracketMatch || dashMatch || noCommaMatch)!;
+    if (match) {
       const [, date, time, rawAuthor, rawText] = match;
       const author = rawAuthor.trim();
       const text = rawText.trim();
 
+      // Check if message is system text
       const isSystem = SYSTEM_PATTERNS.some((pat) => pat.test(text) || pat.test(author));
       if (isSystem) {
         currentMessage = null;
@@ -112,54 +103,9 @@ export function parseChatLog(rawText: string): ParseResult {
 
       participantsSet.add(author);
       messages.push(currentMessage);
-    } else if (timeOnlyMatch) {
-      const time = timeOnlyMatch[1] || timeOnlyMatch[2];
-      const author = timeOnlyMatch[3].trim();
-      const text = timeOnlyMatch[4].trim();
-
-      const isSystem = SYSTEM_PATTERNS.some((pat) => pat.test(text) || pat.test(author));
-      if (isSystem) {
-        currentMessage = null;
-        continue;
-      }
-
-      currentMessage = {
-        id: `msg_${String(counter++).padStart(4, "0")}`,
-        author,
-        text,
-        timestamp: time,
-      };
-
-      participantsSet.add(author);
-      messages.push(currentMessage);
-    } else {
-      // Check for simple Author: Message format if standard date regexes didn't match
-      const simpleMatch = line.match(SIMPLE_COLON_REGEX);
-      if (simpleMatch && !line.startsWith("http") && !line.startsWith("//")) {
-        const rawAuthor = (simpleMatch[1] || simpleMatch[2]).trim();
-        const text = simpleMatch[3].trim();
-
-        // Avoid false positives for things like "Note: ..." or "Date: ..."
-        const isCommonHeader = /^(note|ps|date|time|title|summary|from|to|cc|http|https)$/i.test(rawAuthor);
-        const isSystem = SYSTEM_PATTERNS.some((pat) => pat.test(text) || pat.test(rawAuthor));
-
-        if (!isCommonHeader && !isSystem && text.length > 0) {
-          currentMessage = {
-            id: `msg_${String(counter++).padStart(4, "0")}`,
-            author: rawAuthor,
-            text,
-            timestamp: `Line ${counter}`,
-          };
-          participantsSet.add(rawAuthor);
-          messages.push(currentMessage);
-          continue;
-        }
-      }
-
-      if (currentMessage) {
-        // Multi-line continuation
-        currentMessage.text += `\n${line.trim()}`;
-      }
+    } else if (currentMessage) {
+      // Multi-line continuation
+      currentMessage.text += `\n${line.trim()}`;
     }
   }
 
